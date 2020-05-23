@@ -1,0 +1,9 @@
+/*
+if(($rows=mysql_num_rows($result))<=0){
+
+echo '<span class="row-fluid" style="color:#ccc; margin-left:15px">Incorrect Email Address/Password Combination</span>';
+
+echo mysql_error();
+
+}else{
+*/

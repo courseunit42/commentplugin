@@ -1,0 +1,10 @@
+CREATE TABLE profile
+(
+accouunt_identifier INTEGER NOT NULL PRIMARY KEY,
+page_url VARCHAR(200) UNIQUE,
+company_name VARCHAR(70) UNIQUE,
+email_addr  VARCHAR(90) UNIQUE,
+password varchar(90),
+encryption_key  CHAR(48) UNIQUE,
+verification_hash  char(48) UNIQUE
+);

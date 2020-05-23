@@ -1,0 +1,215 @@
+
+function changeLogoutStatus($username){
+$this->connect();
+$sql=mysql_query("UPDATE profile SET logstatus='0' , sessionid='', time='0' WHERE username='".$username."' ");
+}
+
+function checkLogstatus($username){
+$this->connect();
+$log=0;
+$sql=mysql_query("SELECT logstatus from newusers WHERE username='".$username."' "); 
+
+if($sql){
+if($match=@mysql_fetch_array($sql)){
+$logstatus=$match["logstatus"];
+
+if($logstatus==0){
+
+$log=0;
+}else if($logstatus==1){
+$log=1;
+}
+
+}//closing the if -match block
+}
+return $log;
+}
+
+
+function showImage($file){
+$img= '';
+$dirname = "./images/" ;
+$images = @scandir ($dirname );
+$ignore = Array( "." , ".." );
+$width=70;
+$height=70;
+
+if(! in_array ($file , $ignore )) {
+$img="<img src='./../images/$file ' width='90' class='img-circle' height='90'/><br>";
+}
+return $img;
+
+}
+
+
+function login($email,$password){
+$account_name='';
+$this->connect();
+$error='';
+$password_encrypt='GT12%SgsHAtewY$@!^';
+
+$encryptedPassword=crypt($password,$password_encrypt);
+
+$sql = "SELECT *from profile WHERE email = '".$email."' ";
+$result=mysql_query($sql);
+
+
+if($result && (($rows=mysql_num_rows($result))>0)){
+
+$now=''.date(" jS \of F Y h:i:s A");
+$session=session_id();
+
+$_SESSION['email']=$email;
+$_SESSION['password_unencryt_ed']=$password;
+$_SESSION['encrypted_pass']=$encryptedPassword;
+
+//setting the admin session variable to be equal to an encrypted session variable
+//$_SESSION['admin_client']=crypt(session_id(),$password_encrypt);
+
+
+//generating a session id
+$sessionid=session_id();
+
+
+while($match=mysql_fetch_array($result)){
+$account_name=$match["account_name"];
+$company_name=$match["company_name"];
+$payment_status=$match["payment_status"];
+$activation_status=$match["activation"];
+
+//activation status of 0=trial, 1= payment, 2=expired
+
+if($account_name==''){
+
+$_SESSION['account_name']='Guest';
+}else if($account_name=='0'){
+$_SESSION['account_name']='Guest';
+}else{
+$_SESSION['account_name']=$account_name;
+}
+
+$lastlogin=$match["lastlogin"];
+$sessionid=$match["session_id"];
+
+//setting session variable for payment status
+$_SESSION['payment_status']=$payment_status;
+$_SESSION['activation']=$activation_status;
+}
+
+
+
+$update=mysql_query("UPDATE profile SET session_id='".$session."', logstatus='1', lastlogin='".$now."' WHERE email_addr='".$email."' ");
+
+//redirecting to the index folder
+//header("Location: ../index.php");
+
+}
+
+
+
+return $error;
+
+}
+
+
+function insertIdentifiers($name,$email){
+
+$this->connect();
+$encrypt_key='RTG2GHDsahCOmmServe1342';
+$emailxpl=explode("@",$email);
+$emailFrag=$emailxpl[0].$emailxpl[1];
+$password_encrypt='GT12%SgsHAtewY$@!^';
+
+$hash='Key123FSGh!@#HSgh';
+
+$sql2=mysql_query("INSERT into comment_srv VALUES(NULL,'".$name."','".$name."','0','0','0','0','','".crypt($emailFrag,$encrypt_key)."')");
+
+$sql3=mysql_query("INSERT into comments VALUES(NULL,'".$name."','','','','".crypt($emailFrag,$encrypt_key)."')");
+if($sql2 && $sql3){
+
+echo 'Success';
+}else{
+echo mysql_error();
+
+}
+
+}
+
+
+function signup($name,$email,$password){
+$this->connect();
+$encrypt_key='RTG2GHDsahCOmmServe1342';
+$emailxpl=explode("@",$email);
+$emailFrag=$emailxpl[0].$emailxpl[1];
+$password_encrypt='GT12%SgsHAtewY$@!^';
+
+$hash='Key123FSGh!@#HSgh';
+
+$sql=mysql_query("INSERT into profile VALUES(NULL,'".$name."',' ','".$email."','".crypt($password,$password_encrypt)."',' ','".crypt($emailFrag,$encrypt_key)."','0','','0','','0','0','".crypt($emailFrag,$hash)."')");
+
+if($sql){
+
+$_SESSION['notification']='<h1 style="font-style:italic;font-family:Corbel;font-size:28px">Success'."!".'</h1>'.' You have successfully signup, please check your email for a verification string in order to verify your email address<br/>Thank You';
+
+//email setup
+
+$confirm="Sign up Confirmation";
+			
+			//$header=include('header2.php');			
+			$header= "From: Comment Plug"."<noreply@commentplug.com>\r\n";
+			$header.= "X-Sender: <Comment Plug>\r\n";
+			$header.= "X-Priority: 1\r\n";
+			$header.= "Return-Path: " ."<admin@commentplug.com>\r\n";
+
+			$subj='Sign up confirmation';
+	$link="http://commentplug.com/srv/enc_verify/?encrypt=".crypt($emailFrag,$encrypt_key);
+	//$body='Dear'.' '.$username.',  ';
+	$body="\r\n Thank you for signing up your account has been created please verify your email and activate your account \r\n";
+	$body.='by copying the url below in to your browser window if you cannot load it from your inbox or clicking on the link: '.$link;
+	$body.="  please do not reply to this message, it is automatically generated and because it will not be delivered\r\n  ";
+	$body.='Thank You.';	
+
+	$sendmail=@mail($email,$subj,$body,$header);
+
+header("Location: success.php");
+
+}else{
+$confirm='Error';
+//echo mysql_error();
+}
+
+return $confirm;
+}
+}
+
+
+
+function getUserStatus($username){
+$this->connect();
+$role='';
+
+$sql=mysql_query("SELECT role FROM newusers WHERE username='".$username."' ");
+
+if($sql){
+while($match=@mysql_fetch_array($sql)){
+$role=$match["role"];
+}
+}
+return $role;
+}
+
+
+function publishComments($commentId){
+$this->connect();
+
+$sql=mysql_query("UPDATE comments SET publishstatus='1' WHERE id='".$commentId."' ");
+if($sql){
+
+header("Location : index.php");
+}else{
+
+echo 'Error<br/>';
+
+}
+
+

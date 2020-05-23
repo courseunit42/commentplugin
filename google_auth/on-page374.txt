@@ -1,0 +1,5 @@
+session_start();$_SESSION['user']=$email;
+
+session_start();if(isset($_SESSION['user'])){// user logged in}else{// user not logg(ed in}
+
+session_start();session_destroy();
